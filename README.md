@@ -1,0 +1,2 @@
+# lsearch
+Linear keyword search
