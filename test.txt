@@ -3,5 +3,6 @@
 3:    This is Toshiaki.
 4:   This is him.
 5:  That is Yoshi.
+
 6: I am Toshiaki.
 7: He is Jun.

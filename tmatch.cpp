@@ -28,7 +28,6 @@ public:
 
     offset_ = buf.st_size;
     curp_ = offset_;
-    endp_ = offset_;
 
     readbuf();
   }
@@ -48,22 +47,18 @@ public:
     buf_.resize(pos());
   }
 
-  /// Set end of line marker.
-  void set_eol() {
-    endp_ = curp_;
-  }
-
-  /// Move current pointer.
+  /// Move cursor backward.
   void move_p(size_t n) {
     curp_ -= n;
   }
 
-  /// Read bytes from FD, and update.
+  /// Read bytes from FD, and update the buffer.
   string readbuf() {
     char tmp[BUFFER_SIZE + 1] = {0};
     size_t nread;
     size_t n;
 
+    // If the offset is smaller than BUFFER_SIZE, it can only read offset size.
     if (offset_ < BUFFER_SIZE) {
       n = offset_;
     } else {
@@ -76,16 +71,20 @@ public:
       // TBD something wrong.
     }
 
+    // Read n bytes.
     nread = read(fd_, (void *)tmp, n);
     tmp[nread] = '\0';
 
+    // Update buffer [new data]+[old]
     buf_ = string(tmp) + buf_;
 
     return string(tmp);
   }
 
-  /// Return true if there is still data.
-  /// Return false if there is no data.
+  /// Find the next '\n' in the buffer toward the beginning.
+  /// Update buffer with readbuf() if it cannot find the one.
+  /// Return true if '\n' is found and there is still data in the buffer
+  /// Otherwise it hits the beginning of the file, return false.
   bool find_hol() {
     while (get_char() != '\n') {
       if (pos() == 0) {
@@ -116,9 +115,9 @@ public:
         move_p(1);
         char c = get_char();
 
+        // Find '\n' or the last letter of the keyword (needle).
         if (c == '\n') {
           trim();
-          set_eol();
         } else if (c == needle) {
           found = true;
           break;
@@ -172,17 +171,16 @@ private:
 
   /// Current search position.
   size_t curp_;
-
-  /// Position for last seen carriage return pos.
-  size_t endp_;
 };
 
+/// Print usage.
 void
 print_usage(char *prog) {
   cout << "Usage: " << prog << " <filename> <keyword>" << endl;
   exit(1);
 }
 
+/// Main function.
 int
 main(int argc, char **argv)
 {
